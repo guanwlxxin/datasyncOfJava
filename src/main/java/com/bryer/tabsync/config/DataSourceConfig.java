@@ -33,6 +33,7 @@ public class DataSourceConfig {
             file = file2;
         }
         try {
+            assert file != null;
             prop.load(new FileReader(file));
         } catch (IOException e) {
             e.printStackTrace();
@@ -45,7 +46,8 @@ public class DataSourceConfig {
     public DataSource localMysqlDataSource() throws IOException, PropertyVetoException {
         ComboPooledDataSource ds = new ComboPooledDataSource();
         ds.setDriverClass("com.mysql.jdbc.Driver");
-        ds.setJdbcUrl("jdbc:mysql://" + StrUtil.trim(prop.getOrDefault("src"," 192.168.177.1").toString()) + ":3306/DM_Conf?serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8&useSSL=false");
+        ds.setJdbcUrl("jdbc:mysql://" + StrUtil.trim(prop.getProperty("src"," 192.168.177.1")) + ":3306/" +
+                StrUtil.trim(prop.getProperty("src-name","DM_Conf")) + "?serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8&useSSL=false");
         ds.setUser("root");
         ds.setPassword("qwert!234");
         System.out.println("源数据库URL:" + ds.getJdbcUrl());
@@ -56,7 +58,8 @@ public class DataSourceConfig {
     @Qualifier("localOracleDataSource")
     public DataSource localOracleDataSource() throws IOException, PropertyVetoException, SQLException {
 //        ComboPooledDataSource ds = new ComboPooledDataSource();
-        String jdbcURL = "jdbc:oracle:thin:@" + StrUtil.trim(prop.getOrDefault("dest"," 192.168.177.110").toString()) + ":1521:xe";
+        String jdbcURL = "jdbc:oracle:thin:@" + StrUtil.trim(prop.getProperty("dest"," 192.168.177.110")) + ":1521:" +
+                StrUtil.trim(prop.getProperty("dest-name","xe"));
         BasicDataSource ds = new BasicDataSource();
         ds.setDriverClassName("oracle.jdbc.driver.OracleDriver");
         ds.setUrl(jdbcURL);
