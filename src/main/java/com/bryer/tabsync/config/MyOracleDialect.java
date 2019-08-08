@@ -13,6 +13,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
 
+/**
+ * @author zhangnan@yansou.org
+ */
 public class MyOracleDialect extends OracleDialect {
 
     public MyOracleDialect() {

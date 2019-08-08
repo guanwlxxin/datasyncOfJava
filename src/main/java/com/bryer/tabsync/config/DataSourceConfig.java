@@ -20,7 +20,7 @@ import java.util.Properties;
  */
 @Configuration
 public class DataSourceConfig {
-    static Properties prop = new Properties();
+    private static Properties prop = new Properties();
 
     static {
         File file = null;

@@ -1,7 +1,6 @@
 package com.bryer.tabsync.config;
 
 import cn.hutool.db.Session;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,12 +13,13 @@ import javax.sql.DataSource;
 @Configuration
 public class SessionConfig {
 
-    @Autowired
-    @Qualifier("localMysqlDataSource")
-    private DataSource localMysqlDataSource;
-    @Autowired
-    @Qualifier("localOracleDataSource")
-    private DataSource localOracleDataSource;
+    private final DataSource localMysqlDataSource;
+    private final DataSource localOracleDataSource;
+
+    public SessionConfig(@Qualifier("localMysqlDataSource") DataSource localMysqlDataSource,@Qualifier("localOracleDataSource") DataSource localOracleDataSource) {
+        this.localMysqlDataSource = localMysqlDataSource;
+        this.localOracleDataSource = localOracleDataSource;
+    }
 
     @Bean
     @Qualifier("localMysqlSession")
