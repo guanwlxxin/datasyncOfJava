@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class TableSync implements Runnable {
 
-
+    private final static String TOP = "JYGC";
     private final Session srcSession;
     private final Session destSession;
 
@@ -123,18 +123,18 @@ public class TableSync implements Runnable {
     private void updateSyncTable(String table) throws SQLException {
         table = StrUtil.trim(table);
 
-        String srcSql = "select * from " + table;
+        String srcSql = "SELECT * FROM " + table;
+        srcSql = srcSql.toLowerCase();
         try {
-//            System.out.println(srcSql);
             List<Entity> entityList = srcSession.query(srcSql);
             int count = 0;
             for (Entity it : entityList) {
-                Entity ot = Entity.create("JYGC." + table.toUpperCase());
+                Entity ot = Entity.create(table.toUpperCase());
                 it.forEach((key,val) -> ot.set(key.toUpperCase(),val));
                 insertOrUpdate(destSession,ot,"ID");
                 count++;
             }
-//            System.out.println("UPDATE SYNC: " + table + ",num=" + count);
+            System.out.println("UPDATE SYNC: " + table + ",num=" + count);
         } catch (Throwable e) {
             if (e.getMessage().contains("ORA-00942")) {
                 throw new SQLSyntaxErrorException("ORA-00942: 表或视图不存在 " + table);
@@ -147,18 +147,21 @@ public class TableSync implements Runnable {
 
     private void insertSyncTable(String table) throws SQLException {
         table = StrUtil.trim(table);
-        String descMaxSql = "select max(\"ID\") as maxId from \"" + table.toUpperCase() + "\"";
+        String descMaxSql = "SELECT MAX(\"ID\") AS MAX_ID FROM \"" + table + "\"";
         String readSql = "SELECT * FROM " + table + " WHERE ID > ? ORDER BY ID ASC LIMIT 3000";
+        readSql = readSql.toLowerCase();
+        descMaxSql = descMaxSql.toUpperCase();
+
+
         try {
-//            System.out.println(descMaxSql);
-            Long maxId = destSession.queryOne(descMaxSql).getLong("maxId");
+            Long maxId = destSession.queryOne(descMaxSql).getLong("MAX_ID");
             if (null == maxId) {
                 maxId = 0L;
             }
             List<Entity> entityList = srcSession.query(readSql,maxId);
             int count = 0;
             for (Entity it : entityList) {
-                Entity ot = Entity.create("JYGC." + table.toUpperCase());
+                Entity ot = Entity.create(table.toUpperCase());
                 it.forEach((key,val) -> ot.set(key.toUpperCase(),val));
                 insertOrUpdate(destSession,ot,"ID");
             }
@@ -175,7 +178,7 @@ public class TableSync implements Runnable {
     }
 
 
-    public void insertOrUpdate(Session session,Entity entity,String... keys) throws SQLException {
+    private void insertOrUpdate(Session session,Entity entity,String... keys) throws SQLException {
         System.out.println("insertOrUpdate:" + entity);
         session.insertOrUpdate(entity,keys);
     }
