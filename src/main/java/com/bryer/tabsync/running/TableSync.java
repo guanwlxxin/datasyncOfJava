@@ -85,9 +85,13 @@ public class TableSync implements Runnable {
     private boolean allUpdateSyncTable(File file) throws SQLException {
         if (file.exists() && file.isFile()) {
             List<String> lines = FileUtil.readLines(file,Charset.defaultCharset());
-            for (String it : lines) {
-                if (StrUtil.isNotEmpty(it)) {
-                    updateSyncTable(it);
+            for (String line : lines) {
+                line = StrUtil.trim(line);
+                if (line.startsWith("#")) {
+                    continue;
+                }
+                if (StrUtil.isNotEmpty(line)) {
+                    updateSyncTable(line);
                 }
             }
             return true;
@@ -100,9 +104,13 @@ public class TableSync implements Runnable {
     private boolean allInsertSyncTable(File file) throws SQLException {
         if (file.exists() && file.isFile()) {
             List<String> lines = FileUtil.readLines(file,Charset.defaultCharset());
-            for (String it : lines) {
-                if (StrUtil.isNotEmpty(it)) {
-                    insertSyncTable(it);
+            for (String line : lines) {
+                line = StrUtil.trim(line);
+                if (line.startsWith("#")) {
+                    continue;
+                }
+                if (StrUtil.isNotEmpty(line)) {
+                    insertSyncTable(line);
                 }
             }
             return true;
@@ -114,15 +122,16 @@ public class TableSync implements Runnable {
 
     private void updateSyncTable(String table) throws SQLException {
         table = StrUtil.trim(table);
+
         String srcSql = "select * from " + table;
         try {
 //            System.out.println(srcSql);
             List<Entity> entityList = srcSession.query(srcSql);
             int count = 0;
             for (Entity it : entityList) {
-                Entity ot = Entity.create("JYGC." + table);
-                it.forEach(ot::set);
-                insertOrUpdate(destSession,ot,"id");
+                Entity ot = Entity.create("JYGC." + table.toUpperCase());
+                it.forEach((key,val) -> ot.set(key.toUpperCase(),val));
+                insertOrUpdate(destSession,ot,"ID");
                 count++;
             }
 //            System.out.println("UPDATE SYNC: " + table + ",num=" + count);
@@ -138,7 +147,7 @@ public class TableSync implements Runnable {
 
     private void insertSyncTable(String table) throws SQLException {
         table = StrUtil.trim(table);
-        String descMaxSql = "select max(\"id\") as maxId from \"" + table + "\"";
+        String descMaxSql = "select max(\"ID\") as maxId from \"" + table.toUpperCase() + "\"";
         String readSql = "SELECT * FROM " + table + " WHERE ID > ? ORDER BY ID ASC LIMIT 3000";
         try {
 //            System.out.println(descMaxSql);
@@ -149,9 +158,9 @@ public class TableSync implements Runnable {
             List<Entity> entityList = srcSession.query(readSql,maxId);
             int count = 0;
             for (Entity it : entityList) {
-                Entity ot = Entity.create("JYGC." + table);
-                it.forEach(ot::set);
-                insertOrUpdate(destSession,ot,"id");
+                Entity ot = Entity.create("JYGC." + table.toUpperCase());
+                it.forEach((key,val) -> ot.set(key.toUpperCase(),val));
+                insertOrUpdate(destSession,ot,"ID");
             }
             if (count > 0) {
                 System.out.println("INSERT SYNC: \"" + table + "\",num=" + count);
