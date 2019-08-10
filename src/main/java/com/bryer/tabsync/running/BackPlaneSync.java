@@ -20,13 +20,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author zhangnan@yansou.org
  */
 @Component
-public class TableSync implements Runnable {
+public class BackPlaneSync implements Runnable {
 
     private final static String TOP = "JYGC";
     private final Session srcSession;
     private final Session destSession;
 
-    public TableSync(@Qualifier("localMysqlSession") Session srcSession,@Qualifier("localOracleSession") Session destSession) {
+    public BackPlaneSync(@Qualifier("srcSession") Session srcSession,@Qualifier("destSession") Session destSession) {
         this.srcSession = srcSession;
         this.destSession = destSession;
     }
@@ -124,14 +124,13 @@ public class TableSync implements Runnable {
         table = StrUtil.trim(table);
 
         String srcSql = "SELECT * FROM " + table;
-        srcSql = srcSql.toLowerCase();
         try {
             List<Entity> entityList = srcSession.query(srcSql);
             int count = 0;
             for (Entity it : entityList) {
-                Entity ot = Entity.create(table.toUpperCase());
-                it.forEach((key,val) -> ot.set(key.toUpperCase(),val));
-                insertOrUpdate(destSession,ot,"ID");
+                Entity ot = Entity.create(table);
+                it.forEach(ot::set);
+                insertOrUpdate(destSession,ot,"id");
                 count++;
             }
             System.out.println("UPDATE SYNC: " + table + ",num=" + count);
@@ -147,12 +146,8 @@ public class TableSync implements Runnable {
 
     private void insertSyncTable(String table) throws SQLException {
         table = StrUtil.trim(table);
-        String descMaxSql = "SELECT MAX(\"ID\") AS MAX_ID FROM \"" + table + "\"";
+        String descMaxSql = "SELECT MAX(id) AS MAX_ID FROM " + table;
         String readSql = "SELECT * FROM " + table + " WHERE ID > ? ORDER BY ID ASC LIMIT 3000";
-        readSql = readSql.toLowerCase();
-        descMaxSql = descMaxSql.toUpperCase();
-
-
         try {
             Long maxId = destSession.queryOne(descMaxSql).getLong("MAX_ID");
             if (null == maxId) {
@@ -161,12 +156,12 @@ public class TableSync implements Runnable {
             List<Entity> entityList = srcSession.query(readSql,maxId);
             int count = 0;
             for (Entity it : entityList) {
-                Entity ot = Entity.create(table.toUpperCase());
-                it.forEach((key,val) -> ot.set(key.toUpperCase(),val));
-                insertOrUpdate(destSession,ot,"ID");
+                Entity ot = Entity.create(table);
+                it.forEach(ot::set);
+                insertOrUpdate(destSession,ot,"id");
             }
             if (count > 0) {
-                System.out.println("INSERT SYNC: \"" + table + "\",num=" + count);
+                System.out.println("INSERT SYNC: " + table + ",num=" + count);
             }
         } catch (Throwable e) {
             if (e.getMessage().contains("ORA-00942")) {
