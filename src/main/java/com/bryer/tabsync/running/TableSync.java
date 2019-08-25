@@ -5,6 +5,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.db.Entity;
 import cn.hutool.db.Session;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
@@ -21,10 +22,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Component
 public class TableSync implements Runnable {
-
-    private final static String TOP = "JYGC";
     private final Session srcSession;
     private final Session destSession;
+    @Setter
+    private boolean report;
 
     public TableSync(@Qualifier("localMysqlSession") Session srcSession,@Qualifier("localOracleSession") Session destSession) {
         this.srcSession = srcSession;
@@ -145,6 +146,21 @@ public class TableSync implements Runnable {
 
     }
 
+    private void checkAndEditReport(Entity ot) {
+        if (report) {
+            Long id = ot.getLong("id");
+            if (null != id) {
+                ot.remove("id");
+            } else {
+                id = ot.getLong("ID");
+                ot.remove("ID");
+            }
+            if (null != id) {
+                ot.put("cid",id);
+            }
+        }
+    }
+
     private void insertSyncTable(String table) throws SQLException {
         table = StrUtil.trim(table);
         String descMaxSql = "SELECT MAX(\"ID\") AS MAX_ID FROM \"" + table + "\"";
@@ -180,6 +196,7 @@ public class TableSync implements Runnable {
 
     private void insertOrUpdate(Session session,Entity entity,String... keys) throws SQLException {
         System.out.println("insertOrUpdate:" + entity);
+        checkAndEditReport(entity);
         session.insertOrUpdate(entity,keys);
     }
 
