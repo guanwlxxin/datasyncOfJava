@@ -1,6 +1,7 @@
 package com.bryer.tabsync.config;
 
 import cn.hutool.db.Session;
+import cn.hutool.db.dialect.impl.MysqlDialect;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,25 +14,25 @@ import javax.sql.DataSource;
 @Configuration
 public class SessionConfig {
 
-    private final DataSource localMysqlDataSource;
-    private final DataSource localOracleDataSource;
+    private final DataSource srcDataSource;
+    private final DataSource destDataSource;
 
-    public SessionConfig(@Qualifier("localMysqlDataSource") DataSource localMysqlDataSource,@Qualifier("localOracleDataSource") DataSource localOracleDataSource) {
-        this.localMysqlDataSource = localMysqlDataSource;
-        this.localOracleDataSource = localOracleDataSource;
+    public SessionConfig(@Qualifier("srcMysqlDataSource") DataSource srcDataSource,@Qualifier("destMysqlDataSource") DataSource destDataSource) {
+        this.srcDataSource = srcDataSource;
+        this.destDataSource = destDataSource;
     }
 
     @Bean
-    @Qualifier("localMysqlSession")
-    Session localMysqlSession() {
-        System.out.println("源会话:" + localMysqlDataSource);
-        return Session.create(localMysqlDataSource);
+    @Qualifier("srcSession")
+    public Session srcSession() {
+        System.out.println("源会话:" + srcDataSource);
+        return new Session(srcDataSource,new MysqlDialect());
     }
 
     @Bean
-    @Qualifier("localOracleSession")
-    Session localOracleSession() {
-        System.out.println("目标会话:" + localOracleDataSource);
-        return new Session(localOracleDataSource,new MyOracleDialect());
+    @Qualifier("destSession")
+    public Session destSession() {
+        System.out.println("目标会话:" + destDataSource);
+        return new Session(destDataSource,new MysqlDialect());
     }
 }
