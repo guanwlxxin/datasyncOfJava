@@ -26,7 +26,7 @@ public class TableSync implements Runnable {
     private final Session srcSession;
     private final Session destSession;
 
-    public TableSync(@Qualifier("localMysqlSession") Session srcSession,@Qualifier("localOracleSession") Session destSession) {
+    public TableSync(@Qualifier("srcSession") Session srcSession,@Qualifier("destSession") Session destSession) {
         this.srcSession = srcSession;
         this.destSession = destSession;
     }
